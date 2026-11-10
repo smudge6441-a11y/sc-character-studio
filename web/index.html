@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SC Character Studio by valkyrie_41</title>
+<link rel="icon" href="logo.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><img class="logo" src="logo.png" alt=""> SC Character Studio <small>by valkyrie_41</small></div>
+</header>
+
+<main>
+  <section id="setup" class="card setup" hidden>
+    <h2>Where is Star Citizen installed?</h2>
+    <p class="muted">The studio couldn't find the game automatically. Paste the path of your <b>StarCitizen</b> folder (the one that contains <code>LIVE</code>). In the RSI Launcher it's under Settings → Games → Library folder, plus <code>\StarCitizen</code>.</p>
+    <div class="row">
+      <input id="setupPath" type="text" spellcheck="false" placeholder="e.g. D:\Roberts Space Industries\StarCitizen" style="flex:1">
+      <button id="setupSave" class="primary">Use this folder</button>
+    </div>
+    <div id="setupMsg" class="tiny"></div>
+  </section>
+  <section id="tab-chars" class="tab active" hidden>
+    <div class="chartools">
+      <input id="charSearch" type="search" placeholder="Search your characters…">
+      <button id="charBackupAll" class="primary">Back up all game characters</button>
+      <button id="pfOpen">Create from photo…</button>
+      <label class="button ghost" for="charFile">Import .chf files…</label>
+      <input id="charFile" type="file" accept=".chf" multiple hidden>
+      <span class="muted tiny">Or drop .chf files anywhere on this page.</span>
+    </div>
+    <h3>In the game right now</h3>
+    <div id="charGame" class="chargame"></div>
+    <h3>Your library <span class="muted tiny" id="charCount"></span></h3>
+    <div id="charGrid" class="chargrid"></div>
+    <p class="tiny muted">To use one in Star Citizen: install it here, then open the in-game character customizer and load it from your saved characters. Library files are stored in this app's <code>characters</code> folder and are never modified.</p>
+  </section>
+</main>
+
+<!-- character detail drawer -->
+<aside id="charDrawer" class="drawer" hidden>
+  <div class="drawerhead">
+    <div><div class="code" id="cdTitle"></div><div class="muted tiny" id="cdSource"></div></div>
+    <button class="ghost" id="cdClose" title="Close">✕</button>
+  </div>
+  <h3>3D preview <span class="tiny muted">(drag to turn, scroll to zoom)</span></h3>
+  <div class="cdhead" id="cdHead"></div>
+  <div id="cdRecipe" class="cdrecipe"></div>
+  <h3>Picture</h3>
+  <div class="cdimage" id="cdImage" title="Paste a screenshot (Ctrl+V) or drop an image here"></div>
+  <div class="row">
+    <label class="button ghost small" for="cdImgFile">Upload picture…</label>
+    <input id="cdImgFile" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+    <span class="tiny muted">or press Ctrl+V to paste a screenshot</span>
+  </div>
+  <div id="cdShots" class="shots"></div>
+  <label class="field">Name <input id="cdName" type="text" maxlength="60"></label>
+  <label class="field">Body type
+    <select id="cdBody"><option value="">Not set</option><option>Male</option><option>Female</option></select>
+  </label>
+  <label class="field">Notes <textarea id="cdNotes" rows="4" maxlength="2000" placeholder="e.g. Made for the org photo, PTU 4.4 tweak, colours from…"></textarea></label>
+  <h3>Install into the game</h3>
+  <div class="row">
+    <select id="cdBranch"></select>
+    <input id="cdFileName" type="text" maxlength="60" placeholder="File name">
+    <span class="muted">.chf</span>
+  </div>
+  <div class="row">
+    <button id="cdInstall" class="primary">Install</button>
+    <a id="cdDownload" class="button ghost" href="#">Download .chf</a>
+    <button id="cdDelete" class="ghost danger">Delete from library</button>
+  </div>
+  <div id="cdResult" class="tiny"></div>
+</aside>
+
+<!-- create character from photo -->
+<div id="photoFit" class="modal pf" hidden>
+  <div class="pfbox">
+    <div class="drawerhead">
+      <div><h2>Create a character from a photo</h2>
+        <div class="tiny muted">The photo is analysed in this browser and never uploaded. The result is a blend of the game's stock heads, so expect a resemblance, not a portrait.</div></div>
+      <button class="ghost" id="pfClose" title="Close">✕</button>
+    </div>
+    <div class="pfgrid">
+      <div>
+        <div id="pfDrop" class="pfdrop">
+          <canvas id="pfCanvas"></canvas>
+          <label class="button" for="pfFile">Choose photo…</label>
+          <input id="pfFile" type="file" accept="image/*" hidden>
+          <span class="tiny muted">or drop / paste (Ctrl+V) an image</span>
+        </div>
+        <div class="row">
+          <label>Body <select id="pfGender"><option value="male">Male</option><option value="female">Female</option></select></label>
+          <label>Hair &amp; base from <select id="pfTemplate"></select></label>
+        </div>
+        <div class="row pfstyles">
+          <label>Hair
+            <button class="small ghost" data-step="pfHairStyle:-1" title="Previous style">‹</button>
+            <select id="pfHairStyle"></select>
+            <button class="small ghost" data-step="pfHairStyle:1" title="Next style">›</button></label>
+          <div id="pfHairSuggest" class="pf-suggest" hidden></div>
+          <label>Brows <select id="pfBrowStyle"></select></label>
+          <label>Beard <select id="pfBeardStyle"></select></label>
+        </div>
+        <div class="row pfcolours">
+          <label><input type="color" id="pfSkin" value="#c8a088"> Skin</label>
+          <label><input type="color" id="pfIris" value="#5a4030"> Eyes</label>
+          <label><input type="color" id="pfHair" value="#3a2a20"> Hair</label>
+          <span class="tiny muted">picked from the photo; adjust if they look off</span>
+        </div>
+        <div class="row pfskinrow">
+          <span class="tiny muted pf-mk-title">Skin tone</span>
+          <div class="pf-skinstrip" id="pfSkinStrip" title="The game's skin tones, light to dark. Click to choose; the marker is the photo's estimate.">
+            <canvas id="pfSkinCanvas" width="400" height="24"></canvas><div class="pf-skinmark" id="pfSkinMark"></div>
+          </div>
+          <span class="tiny muted" id="pfSkinNote"></span>
+        </div>
+        <div class="row pfmakeup">
+          <span class="tiny muted pf-mk-title">Freckles</span>
+          <label title="How many freckles">Amount <input type="range" id="pfFreckAmt" min="0" max="100" value="50"></label>
+          <label title="How dark the freckles are">Strength <input type="range" id="pfFreckOp" min="0" max="100" value="25"></label>
+          <span class="tiny muted" id="pfFreckNote"></span>
+        </div>
+        <div class="row pfmakeup" id="pfMakeupRow" hidden>
+          <span class="tiny muted pf-mk-title">Makeup</span>
+          <label title="Lipstick colour and amount"><input type="color" id="pfLips" value="#8a3a3a"> Lips
+            <input type="range" id="pfLipsAmt" min="0" max="100" value="15"></label>
+          <label title="Eye makeup colour and amount"><input type="color" id="pfEyeMk" value="#4a3a3a"> Eyes
+            <input type="range" id="pfEyeMkAmt" min="0" max="100" value="0"></label>
+          <label title="Blush colour and amount"><input type="color" id="pfBlush" value="#a04040"> Blush
+            <input type="range" id="pfBlushAmt" min="0" max="100" value="0"></label>
+          <span class="tiny muted" id="pfMakeupNote">read from the photo; 0 = none</span>
+        </div>
+        <div class="row">
+          <button id="pfGenerate" class="primary" disabled>Generate</button>
+        </div>
+        <div id="pfStatus" class="pf-status"></div>
+      </div>
+      <div>
+        <div class="cdhead" id="pfHead"><div class="hv-status">The 3D result appears here.</div></div>
+        <div id="pfRecipe" class="cdrecipe"></div>
+        <div class="row">
+          <input id="pfName" type="text" maxlength="60" placeholder="Name for the new character" style="flex:1">
+          <button id="pfSave" class="primary" disabled>Save to library</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+<script src="common.js"></script>
+<script src="characters.js"></script>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module" src="headview.js"></script>
+<script type="module" src="photofit.js"></script>
+</body>
+</html>

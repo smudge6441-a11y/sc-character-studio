@@ -1,0 +1,16 @@
+# personal data: never commit
+characters/
+settings.json
+*.chf
+
+# decoded from the local game install (CIG's assets): rebuilt on each PC
+data/
+
+# build output (the .exe goes on the GitHub Releases page instead)
+dist/
+build/
+*.spec
+
+__pycache__/
+*.pyc
+*.log
